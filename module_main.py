@@ -26,7 +26,7 @@ def czas():
 
 def get_item(item):
     itemek = []
-    bufor = f"```\nAktualnie obsługiwane przedmioty to:\n\n"
+    bufor = f"```\nCurrently supported items:\n\n"
     for i in range(len(item)):
         itemek = item[i].split(";")
         itemek = itemek[1]
@@ -88,11 +88,11 @@ async def get_update(ctx, bot, user):
     tablica = user
     if user != "black":
         if user == "chest":
-            bufor = f"```\n\t\t\t\t\tPrzedmioty w wspólnej szafce:\n\n"
+            bufor = f"```\n\t\t\t\t\tItems in a shared locker:\n\n"
         else:
             user = str(user).replace("U", "")
             user = await bot.fetch_user(int(user))
-            bufor = f"```\n\t\t\t\t\tPrzedmioty w szafce {user}:\n\n"
+            bufor = f"```\n\t\t\t\t\tItems in {user} locker:\n\n"
         for row in sql.execute(f"SELECT przedmiot FROM {tablica}"):
             row = str(row)
             row = (

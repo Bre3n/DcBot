@@ -157,9 +157,7 @@ async def balance_item(ctx, bot, user, messagestr):
     sql.execute(f"SELECT rowid FROM {user} WHERE przedmiot = ?", (str(message[0]),))
     data = sql.fetchall()
     if len(data) == 0:
-        await ctx.send(
-            "Przedmiot nie jest osługiwany. Sprawdź obługiwane itemy przez **?item**"
-        )
+        await ctx.send("Unsupported item. Check supported items on **?item**")
         return 0
     else:
         #! DLA UZYTKOWNIKA
@@ -203,14 +201,14 @@ async def balance_item(ctx, bot, user, messagestr):
             await msg.edit(content=bufor)
         else:
             await channel.send(
-                "Wiadomość wygenerowana na rzecz ID. Skopiuj ID wiadomości i wklej w UPDATE_MESSAGE .env"
+                "Message generated for the ID. Copy the message ID and paste in UPDATE_MESSAGE .env"
             )
         user = user.replace("U", "")
         user = bot.get_user(int(user))
         if int(message[1]) >= 0:
-            mess = f"Dodano {message[0]} {message[1]} do balansu dla {user}. Aktualne balans to {data}"
+            mess = f"Added {message[0]} {message[1]} to {user} balance. Current balance is {data}"
         else:
-            mess = f"Odjęto {message[0]} {message[1]} od balansu dla {user}. Aktualny balans to {data}"
+            mess = f"Deleted {message[0]} {message[1]} from {user} balance. Current balance is {data}"
     return mess
 
 
@@ -222,7 +220,7 @@ async def blacklist(ctx, bot, var, name, powod):
         data = sql.fetchall()
         if len(data) == 1:
             await ctx.send(
-                "Personalia zostały już dodane do blacklisty! Aby zmodyfikować powód, usuń je z blacklisty."
+                "The person has already been blacklisted! To modify the reason, remove them from the blacklist."
             )
         else:
             sql.execute(
@@ -232,7 +230,9 @@ async def blacklist(ctx, bot, var, name, powod):
             conn.commit()
             conn.close()
             name = name.replace("-", " ")
-            await ctx.send(f"{name} został dodany do blacklisty  :skull_crossbones:")
+            await ctx.send(
+                f"{name} has been added to the blacklist  :skull_crossbones:"
+            )
             bufor = await module_main.get_update(ctx, bot, "black")
             channel = bot.get_channel(int(update_channel_black_js))
             if update_massage_black_js != "None":
@@ -240,7 +240,7 @@ async def blacklist(ctx, bot, var, name, powod):
                 await msg.edit(content=bufor)
             else:
                 await channel.send(
-                    "Wiadomość wygenerowana na rzecz ID. Skopiuj ID wiadomości i wklej w UPDATE_MESSAGE_BLACK .env"
+                    "Message generated for the ID. Copy the message ID and paste in UPDATE_MESSAGE_BLACK .env"
                 )
     elif var == "del":
         sql.execute("SELECT kto FROM blacklist")
@@ -259,7 +259,7 @@ async def blacklist(ctx, bot, var, name, powod):
         sql.execute("DELETE from blacklist WHERE kto = ?", (bufor,))
         conn.commit()
         conn.close()
-        await ctx.send(f"Usunięto {bufor} z blacklisty  :angel:")
+        await ctx.send(f"Deleted {bufor} from blacklist  :angel:")
         bufor = await module_main.get_update(ctx, bot, "black")
         channel = bot.get_channel(int(update_channel_black_js))
         if update_massage_black_js != "None":
@@ -267,13 +267,13 @@ async def blacklist(ctx, bot, var, name, powod):
             await msg.edit(content=bufor)
         else:
             await channel.send(
-                "Wiadomość wygenerowana na rzecz ID. Skopiuj ID wiadomości i wklej w UPDATE_MESSAGE_BLACK .env"
+                "Message generated for the ID. Copy the message ID and paste in UPDATE_MESSAGE_BLACK .env"
             )
     elif var == "info":
         sql.execute("SELECT rowid FROM blacklist")
         data = sql.fetchall()
         if len(data) == 0:
-            mess = "```\nNie ma nikogo na blackliście!\n```"
+            mess = "```\nThere is no one on blacklist!\n```"
         else:
             sql.execute("SELECT kto FROM blacklist")
             data = sql.fetchall()
