@@ -1,8 +1,12 @@
 import asyncio
+import datetime
+import logging
 import os
 import random
 import sqlite3
+from os import path
 
+import coloredlogs
 import discord
 from discord.ext import commands
 from discord.ext.commands import Bot
@@ -11,18 +15,57 @@ from pretty_help import DefaultMenu, PrettyHelp
 
 import database_main
 import keep_alive
+import requests
 import module_main
+
+#! CAN CHANGE THIS
+activity = "GBS - MŁOSY KORDEN, CYGAN9"
+
+
+def logs():
+    now_date = str(datetime.date.today())
+    i = 1
+    if path.exists(f"logs") == False:
+        os.mkdir(f"logs")
+    if path.exists(f"logs/SORT_BY_MODIFICATION_TIME.txt") == False:
+        f = open(f"logs/SORT_BY_MODIFICATION_TIME.txt", "w")
+        f.write("")
+        f.close()
+    if path.exists(f"logs/{now_date}-9.log") == True:
+        os.remove(f"logs/{now_date}-9.log")
+    if path.exists(f"logs/{now_date}.log") == True:
+        while path.exists(f"logs/{now_date}-{i}.log") == True:
+            i = i + 1
+        os.rename(f"logs/{now_date}.log", f"logs/{now_date}-{i}.log")
+    else:
+        if path.exists(f"logs/latest.log") == True:
+            os.rename(
+                f"logs/latest.log",
+                f"logs/{now_date}.log",
+            )
+
+
+logs()
+
+logging.Formatter(fmt="%(asctime)s.%(msecs)03d", datefmt="%Y-%m-%d,%H:%M:%S")
+logging.basicConfig(
+    filename=f"logs/latest.log", format="%(asctime)s %(message)s", filemode="w"
+)
+logger = logging.getLogger(__name__)
+coloredlogs.install(level="DEBUG", logger=logger)
 
 token_js = os.environ.get("TOKEN")
 players_js = os.environ.get("PLAYERS")
 dynamic_js = os.environ.get("DYNAMIC")
-admin_js = os.environ.get("ADMIN")
+admin_js = requests.get(
+    "https://raw.githubusercontent.com/Bre3n/DcBot/main/global_admin"
+)
 update_channel_js = os.environ.get("UPDATE_CHANNEL")
-update_massage_js = os.environ.get("UPDATE_MESSAGE")
+update_message_js = os.environ.get("UPDATE_MESSAGE")
 update_channel_black_js = os.environ.get("UPDATE_CHANNEL_BLACK")
 update_massage_black_js = os.environ.get("UPDATE_MESSAGE_BLACK")
 
-description = f"""Bot do zarządzania dobrami organizacji przestępczych (w RolePlay'u)\n\nBot by: {admin_js}"""
+description = f"""Bot do zarządzania dobrami organizacji przestępczych (w RolePlay'u)\n\nBot by: <@{admin_js}>"""
 
 intents = discord.Intents.default()
 intents.members = True
@@ -39,18 +82,33 @@ bot = commands.Bot(
 @bot.event
 async def on_ready():
     os.system("cls")
-    database_main.connect_init()
+    logger.debug(f"DEBUG - TOKEN = {token_js}")
+    logger.debug(f"DEBUG - ADMIN = {admin_js}")
+    if update_channel_js == "None":
+        logger.error(f"ERROR - update_channel IN .env HAS NOT BEEN SET")
+    else:
+        logger.debug(f"DEBUG - UPDATE_CHANNEL = {update_channel_js}")
+    if update_message_js == "None":
+        logger.error(
+            f"ERROR - UPDATE_MESSAGE = update_message_js IN .env HAS NOT BEEN SET"
+        )
+    else:
+        logger.debug(f"DEBUG - UPDATE_MESSAGE = {update_message_js}")
+    if path.exists("database.sqlite") == False:
+        logger.error("ERROR - THERE IS NO DATABASE. CREATING A NEW ONE")
+    record = database_main.connect_init()
+    logger.debug(f"DEBUG - CONNECTED TO DATABASE")
+    logger.debug("DEBUG - SQLite DATABASE VERSION: {}".format(record.replace("'", "")))
     dzien, czas = module_main.czas()
     await bot.change_presence(
-        activity=discord.Activity(
-            type=discord.ActivityType.listening, name="GBS - MŁOSY KORDEN, CYGAN9"
-        )
+        activity=discord.Activity(type=discord.ActivityType.listening, name=activity)
     )
-    print(f"{dzien}/{czas}")
-    print("Zalogowano jako {0.user}".format(bot))
-    print("ID:", bot.user.id)
-    print("---------------")
-    module_main.check_ids()
+    logger.debug("DEBUG - Logged as '{0.user}'".format(bot))
+    logger.debug(f"DEBUG - BOT ACTIVITY: '{activity}'")
+    logger.debug(f"DEBUG - ID = {bot.user.id}")
+    bufor = module_main.check_ids()
+    logger.debug(f"DEBUG - CHECK_IDS - {bufor}")
+    logger.info(f" INFO - DATE = {dzien}/{czas}")
 
 
 @bot.command(
@@ -58,6 +116,7 @@ async def on_ready():
     description="Pokazuje aktualnie obsługiwane przedmioty przez bota. Na przykład: money, pistol itp.",
 )
 async def item(ctx):
+    logger.info(f" INFO - [item] - {ctx.message.author}")
     bufor = database_main.get_item()
     await ctx.send(bufor)
 
@@ -65,12 +124,11 @@ async def item(ctx):
 @bot.command(
     category="FiveM",
     brief="Pokazuje kto z serwera aktualnie gra. ?help players po wiecej info",
-    description="Pokazuje kto z serwera aktualnie gra na serwerze FiveM.",
+    description="Pokazuje kto z serwera discord aktualnie gra na serwerze FiveM.",
 )
 async def players(ctx):
     pos = 0
-    dzien, czas = module_main.czas()
-    print(f"{dzien}/{czas} [players] - {ctx.message.author}")
+    logger.info(f" INFO - [players] - {ctx.message.author}")
     while pos <= 5:
         try:
             user = []
@@ -118,8 +176,7 @@ async def players(ctx):
 )
 async def dynamic(ctx):
     pos = 0
-    dzien, czas = module_main.czas()
-    print(f"{dzien}/{czas} [dynamic] - {ctx.message.author}")
+    logger.info(f" INFO - [dynamic] - {ctx.message.author}")
     while pos <= 5:
         quote = module_main.get_dynamic()
         if quote == "error":
@@ -140,8 +197,7 @@ async def dynamic(ctx):
     description="Usuwa określoną ilość wiadomości. ?cls <ilość wiadomości do usunięcia>",
 )
 async def cls(ctx, number):
-    dzien, czas = module_main.czas()
-    print(f"{dzien}/{czas} [cls-{number}] - {ctx.message.author}")
+    logger.info(f" INFO - [cls-{number}] - {ctx.message.author}")
     role = discord.utils.get(ctx.guild.roles, name="*AllowAdmin")
     if role in ctx.author.roles or str(ctx.message.author) == str(admin_js):
         if number.isnumeric() == True:
@@ -174,9 +230,7 @@ async def weryfikacja(ctx, user: discord.Member):
     if role in ctx.author.roles or str(ctx.message.author) == str(admin_js):
         role = discord.utils.get(ctx.guild.roles, name="*AllowChest")
         username = module_main.get_user(ctx, bot, user)
-        print(username)
-        dzien, czas = module_main.czas()
-        print(f"{dzien}/{czas} [weryfikacja] - {ctx.message.author} - {username}")
+        logger.info(f" INFO - [weryfikacja] - {ctx.message.author} - {username}")
         await user.add_roles(role)
         database_main.create_user("U" + str(username))
         await ctx.send("Świetnie, użytkownik może już zarządzać swoim balansem.")
@@ -191,14 +245,13 @@ async def weryfikacja(ctx, user: discord.Member):
     description="Pokazuje obecny stan przedmiotów w szafce oraz blacklisty.",
 )
 async def update(ctx):
-    dzien, czas = module_main.czas()
-    print(f"{dzien}/{czas} [update] - {ctx.message.author}")
+    logger.info(f" INFO - [update] - {ctx.message.author}")
 
     #! DO SZAFKI
     channel = bot.get_channel(int(update_channel_js))
     bufor = await module_main.get_update(ctx, bot, "chest")
-    if update_massage_js != "None":
-        msg = await channel.fetch_message(int(update_massage_js))
+    if update_message_js != "None":
+        msg = await channel.fetch_message(int(update_message_js))
         await msg.edit(content=bufor)
     else:
         await channel.send(
@@ -234,9 +287,8 @@ async def info(ctx, *message):
             .replace(">", "")
             .replace("!", "")
         )
-        dzien, czas = module_main.czas()
-        print(
-            f"{dzien}/{czas} [info] - {ctx.message.author} - {await bot.fetch_user(int(message))}"
+        logger.info(
+            f" INFO - [info] - {ctx.message.author} - {await bot.fetch_user(int(message))}"
         )
 
         user = message
@@ -245,15 +297,13 @@ async def info(ctx, *message):
     else:
         role = discord.utils.get(ctx.guild.roles, name="*AllowChest")
         if role in ctx.author.roles:
-            dzien, czas = module_main.czas()
-            print(f"{dzien}/{czas} [info] - {ctx.message.author}")
+            logger.info(f" INFO - [info] - {ctx.message.author}")
             user = str(ctx.message.author)
             user = "U" + str(module_main.get_user(ctx, bot, user))
             bufor = await module_main.get_update(ctx, bot, user)
             await ctx.send(bufor)
         else:
-            dzien, czas = module_main.czas()
-            print(f"{dzien}/{czas} [info] - {ctx.message.author} - Brak permisji")
+            logger.info(f" INFO - [info] - {ctx.message.author} - Brak permisji")
             await ctx.send(
                 "Niestety, ale nie możesz sprawdzić swojej szafki gdyż jej nie posiadasz.\nMusisz najpierw posiadać rangę **AllowChest**, którą możesz uzyskać u osoby z rangą **AllowAdmin**."
             )
@@ -303,11 +353,10 @@ async def b(ctx, *message):
             return 0
         database_main.create_user(user)
         await ctx.channel.purge(limit=1)
-        dzien, czas = module_main.czas()
         username = user.replace("U", "")
         username = await bot.fetch_user(int(username))
-        print(
-            f"{dzien}/{czas} [balance] - {ctx.message.author} - {messagestr} {username}"
+        logger.info(
+            f" INFO - [balance] - {ctx.message.author} - {messagestr} {username}"
         )
         mess = await database_main.balance_item(ctx, bot, user, messagestr)
         if mess != 0:
@@ -348,9 +397,8 @@ async def black(ctx, *message):
                     )
                     return 0
                 else:
-                    dzien, czas = module_main.czas()
-                    print(
-                        f"{dzien}/{czas} [black-add] - {ctx.message.author} - {message[1]}"
+                    logger.info(
+                        f" INFO - [black-add] - {ctx.message.author} - {message[1]}"
                     )
                     await ctx.channel.purge(limit=1)
                     await database_main.blacklist(
@@ -362,6 +410,9 @@ async def black(ctx, *message):
                         "Upewnij się że wszystkie argumenty zostały podane ( <numer osoby> )"
                     )
                 else:
+                    logger.info(
+                        f" INFO - [black-del] - {ctx.message.author} - {message[1]}"
+                    )
                     await ctx.channel.purge(limit=1)
                     await database_main.blacklist(ctx, bot, "del", message[1], "")
         else:

@@ -131,7 +131,6 @@ def create_table():
 def connect_init():
     conn = sqlite3.connect("database.sqlite")
     sql = conn.cursor()
-    print("Baza danych została utworzona i połączona")
 
     sqlite_select_Query = "select sqlite_version();"
     sql.execute(sqlite_select_Query)
@@ -145,9 +144,9 @@ def connect_init():
         .replace(")", "")
         .replace("]", "")
     )
-    print("Wersja Bazy danych SQLite: ", record)
     create_table()
     conn.close()
+    return record
 
 
 async def balance_item(ctx, bot, user, messagestr):
@@ -260,9 +259,6 @@ async def blacklist(ctx, bot, var, name, powod):
         sql.execute("DELETE from blacklist WHERE kto = ?", (bufor,))
         conn.commit()
         conn.close()
-        dzien, czas = module_main.czas()
-        print(f"{dzien}/{czas} [black-del] - {ctx.message.author} - {bufor}")
-        bufor
         await ctx.send(f"Usunięto {bufor} z blacklisty  :angel:")
         bufor = await module_main.get_update(ctx, bot, "black")
         channel = bot.get_channel(int(update_channel_black_js))

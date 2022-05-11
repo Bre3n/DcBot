@@ -12,7 +12,7 @@ players_js = os.environ.get("PLAYERS")
 dynamic_js = os.environ.get("DYNAMIC")
 bot_id_js = os.environ.get("BOT_ID")
 update_channel_js = os.environ.get("UPDATE_CHANNEL")
-update_massage_js = os.environ.get("UPDATE_MESSAGE")
+update_message_js = os.environ.get("UPDATE_MESSAGE")
 update_channel_black_js = os.environ.get("UPDATE_CHANNEL_BLACK")
 update_massage_black_js = os.environ.get("UPDATE_MESSAGE_BLACK")
 
@@ -138,7 +138,7 @@ def check_ids():
     if update_channel_js == "None":
         print("Nie ustawiono poprawnie ID kanału do aktualizacji skrzynki!")
     else:
-        if update_massage_js == "None":
+        if update_message_js == "None":
             print("Nie ustawiono poprawnie ID kanału do aktualizacji skrzynki!")
     if update_channel_black_js == "None":
         print("Nie ustawiono poprawnie ID kanału do aktualizacji blacklisty!")
