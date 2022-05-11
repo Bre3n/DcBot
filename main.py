@@ -82,8 +82,6 @@ bot = commands.Bot(
 @bot.event
 async def on_ready():
     os.system("cls")
-    logger.debug(f"DEBUG - TOKEN = {token_js}")
-    logger.debug(f"DEBUG - ADMIN = {admin_js}")
     if update_channel_js == "None":
         logger.error(f"ERROR - update_channel IN .env HAS NOT BEEN SET")
     else:
