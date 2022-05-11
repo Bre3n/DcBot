@@ -8,6 +8,7 @@ from os import path
 
 import coloredlogs
 import discord
+import requests
 from discord.ext import commands
 from discord.ext.commands import Bot
 from discord_components import Button, DiscordComponents
@@ -15,7 +16,6 @@ from pretty_help import DefaultMenu, PrettyHelp
 
 import database_main
 import keep_alive
-import requests
 import module_main
 
 #! CAN CHANGE THIS
@@ -57,15 +57,15 @@ coloredlogs.install(level="DEBUG", logger=logger)
 token_js = os.environ.get("TOKEN")
 players_js = os.environ.get("PLAYERS")
 dynamic_js = os.environ.get("DYNAMIC")
-admin_js = requests.get(
-    "https://raw.githubusercontent.com/Bre3n/DcBot/main/global_admin"
-)
+r = requests.get("https://raw.githubusercontent.com/Bre3n/DcBotGTA/main/global_admin")
+r = r.content
+admin_js = r.decode("utf-8")
 update_channel_js = os.environ.get("UPDATE_CHANNEL")
 update_message_js = os.environ.get("UPDATE_MESSAGE")
 update_channel_black_js = os.environ.get("UPDATE_CHANNEL_BLACK")
 update_massage_black_js = os.environ.get("UPDATE_MESSAGE_BLACK")
 
-description = f"""Bot do zarządzania dobrami organizacji przestępczych (w RolePlay'u)\n\nBot by: <@{admin_js}>"""
+description = f"""Bot for managing the resources of organizations (GTA RP)\n\nBot by: <@{admin_js}>"""
 
 intents = discord.Intents.default()
 intents.members = True
@@ -75,7 +75,7 @@ bot = commands.Bot(
     command_prefix="?",
     description=description,
     intents=intents,
-    help_command=PrettyHelp(no_category="Komendy"),
+    help_command=PrettyHelp(no_category="Commands"),
 )
 
 
@@ -112,8 +112,8 @@ async def on_ready():
 
 
 @bot.command(
-    brief="Pokazuje obsługiwane przedmioty. ?help item po wiecej info",
-    description="Pokazuje aktualnie obsługiwane przedmioty przez bota. Na przykład: money, pistol itp.",
+    brief="Show supported items. ?help item for more info",
+    description="Shows currently supported items by bot. For example: money, pistol itp.",
 )
 async def item(ctx):
     logger.info(f" INFO - [item] - {ctx.message.author}")
@@ -123,8 +123,7 @@ async def item(ctx):
 
 @bot.command(
     category="FiveM",
-    brief="Pokazuje kto z serwera aktualnie gra. ?help players po wiecej info",
-    description="Pokazuje kto z serwera discord aktualnie gra na serwerze FiveM.",
+    brief="Shows who from DC Server is actualy playing on server. ?help players for more info",
 )
 async def players(ctx):
     pos = 0
@@ -156,23 +155,22 @@ async def players(ctx):
                 pos = 10
     if pos <= 5:
         await ctx.send(
-            "Wygląda na to, że serwer jest wyłączony. Jeżeli sądzisz, że tak nie jest spróbuj jeszcze raz."
+            "It looks like server is down. If you don't think this is the case, please try again."
         )
     else:
         if len(user) != 0:
-            mess = "```\nAktualnie na serwerze jest:\n"
+            mess = "```\nCurrently playing on server:\n"
             for i in range(len(member_list)):
                 mess += f"{user[i]}\n"
             mess += "```"
             await ctx.send(mess)
         else:
-            await ctx.send("Aktualnie nie ma nikogo na serwerze :(")
+            await ctx.send("Is anyone there? :( No")
 
 
 @bot.command(
     category="FiveM",
-    brief="Pokazuje ile osób jest na serwerze. ?help dynamic po wiecej info",
-    description="Pokazuje ile osób jest na serwerze, na maksymalną jego ilość. 100/200",
+    brief="Shows how many players currently playing on the server. F.E 100/200",
 )
 async def dynamic(ctx):
     pos = 0
@@ -185,7 +183,7 @@ async def dynamic(ctx):
             pos = 10
     if pos <= 6:
         await ctx.send(
-            "Wygląda na to, że serwer jest wyłączony. Jeżeli sądzisz, że tak nie jest spróbuj jeszcze raz."
+            "It looks like server is down. If you don't think this is the case, please try again."
         )
     else:
         await ctx.send(quote)
@@ -193,8 +191,8 @@ async def dynamic(ctx):
 
 
 @bot.command(
-    brief="Usuwa określoną ilość wiadomości. ?help cls po wiecej info",
-    description="Usuwa określoną ilość wiadomości. ?cls <ilość wiadomości do usunięcia>",
+    category="Admin",
+    brief="Clears the specifed amount of messages. ?cls <amount of messages for delete>",
 )
 async def cls(ctx, number):
     logger.info(f" INFO - [cls-{number}] - {ctx.message.author}")
@@ -202,7 +200,7 @@ async def cls(ctx, number):
     if role in ctx.author.roles or str(ctx.message.author) == str(admin_js):
         if number.isnumeric() == True:
             if int(number) < 2:
-                await ctx.send("Musisz wpisać liczbę większą, bądz równą 2")
+                await ctx.send("You must enter value >= 2!")
             else:
                 await ctx.channel.purge(limit=int(number) + 1)
         else:
@@ -210,21 +208,21 @@ async def cls(ctx, number):
                 os.system("cls")
                 await ctx.channel.purge(limit=1)
             else:
-                await ctx.send("Musisz wpisać liczbę!")
+                await ctx.send("You must enter value >= 2!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=1)
     else:
-        await ctx.send("Niestety nie masz uprawnień aby tego dokonać!")
+        await ctx.send("Unfortunately, you do not have sufficient permissions!")
         await asyncio.sleep(1)
         await ctx.channel.purge(limit=2)
     pos = False
 
 
 @bot.command(
-    brief="Za pomocą tej komendy możesz uzyskać dodatkowe permisje. ?help weryfikacja po wiecej info",
-    description="Za użyciem tej komendy zostanie utworzona twoja baza danych oraz uzyskasz możliwość dodawania itemów do szafek. Na przykład 'add money 500'",
+    category="Admin",
+    brief="With this command you can give **AllowChest** permissions.",
 )
-async def weryfikacja(ctx, user: discord.Member):
+async def verification(ctx, user: discord.Member):
     member = ctx.message.author
     role = discord.utils.get(member.guild.roles, name="*AllowAdmin")
     if role in ctx.author.roles or str(ctx.message.author) == str(admin_js):
@@ -233,16 +231,15 @@ async def weryfikacja(ctx, user: discord.Member):
         logger.info(f" INFO - [weryfikacja] - {ctx.message.author} - {username}")
         await user.add_roles(role)
         database_main.create_user("U" + str(username))
-        await ctx.send("Świetnie, użytkownik może już zarządzać swoim balansem.")
+        await ctx.send("Great, the user can now manage his balance.")
     else:
         await ctx.send(
-            "Niestety, ale nie masz wystarczających permisji. Skontaktuj się z kimś z rangą **AllowAdmin**!"
+            "Unfortunately, you do not have sufficient permissions! Please contact someone with **AllowAdmin** role!"
         )
 
 
 @bot.command(
-    brief="Pokazuje obecny stan szafki, blacklisty. ?help update po wiecej info",
-    description="Pokazuje obecny stan przedmiotów w szafce oraz blacklisty.",
+    brief="Updates info about global chest and blacklist. (if for some reason it didn't happen automatically)",
 )
 async def update(ctx):
     logger.info(f" INFO - [update] - {ctx.message.author}")
@@ -255,7 +252,7 @@ async def update(ctx):
         await msg.edit(content=bufor)
     else:
         await channel.send(
-            "Wiadomość wygenerowana na rzecz ID. Skopiuj ID wiadomości i wklej w UPDATE_MESSAGE .env"
+            "Message generated for the ID. Copy the message ID and paste in UPDATE_MESSAGE .env"
         )
 
     #! DO BLACKLISTY
@@ -266,13 +263,12 @@ async def update(ctx):
         await msg.edit(content=bufor)
     else:
         await channel.send(
-            "Wiadomość wygenerowana na rzecz ID. Skopiuj ID wiadomości i wklej w UPDATE_MESSAGE_BLACK .env"
+            "Message generated for the ID. Copy the message ID and paste in UPDATE_MESSAGE_BLACK .env"
         )
 
 
 @bot.command(
-    brief="Pokazuje informacje o twojej szafce bądź szafce innego gracza. ?help info po wiecej info",
-    description="Pokazuje informacje o twojej szafce bądź szafce innego gracza. Na przykłąd ?weryfikacja <użytkownik> (jeżeli chcesz zobaczyć stan kogoś szafki",
+    brief="Shows information about your chest or another player's chest.",
 )
 async def info(ctx, *message):
     if str(message) != "()":
@@ -303,15 +299,15 @@ async def info(ctx, *message):
             bufor = await module_main.get_update(ctx, bot, user)
             await ctx.send(bufor)
         else:
-            logger.info(f" INFO - [info] - {ctx.message.author} - Brak permisji")
+            logger.info(f" INFO - [info] - {ctx.message.author} - No permission")
             await ctx.send(
-                "Niestety, ale nie możesz sprawdzić swojej szafki gdyż jej nie posiadasz.\nMusisz najpierw posiadać rangę **AllowChest**, którą możesz uzyskać u osoby z rangą **AllowAdmin**."
+                "Unfortunately, you can't check your locker because you don't have one.\nYou must first have a rank **AllowChest**, which you can get from a person with a rank **AllowAdmin**."
             )
 
 
 @bot.command(
-    brief="Zarządzanie balansem swojej szafki. ?help b po wiecej info",
-    description="Zarządzanie balansem swojej szafki. Na przykład 'b money 500', albo 'b money -500'. Lista opsługiwanych itemów jest dostępna pod komendą '?item'",
+    brief="Balance management of your locker. ?help b po wiecej info",
+    description="Balance management of your locker. F.E 'b money 500', or 'b money -500'. List of supported items on '?item'",
 )
 async def b(ctx, *message):
     role = discord.utils.get(ctx.guild.roles, name="*AllowChest")
@@ -334,9 +330,7 @@ async def b(ctx, *message):
                 user = "U" + str(message[2])
                 messagestr = str(message[0]) + " " + str(message[1])
             else:
-                await ctx.send(
-                    "Powiedz no, czy to coś w przodu twojej głowy to twarz czy dupa? ( ?b <item> <ile> )"
-                )
+                await ctx.send("Hmm, that not what I meant ( ?b <item> <amount> )")
                 return 0
         else:
             user = str(ctx.message.author)
@@ -347,9 +341,7 @@ async def b(ctx, *message):
         elif len(message) == 1:
             messagestr = str(message[0]) + " " + "1"
         elif len(message) > 3 or len(message) == 0 or str(message) == "()":
-            await ctx.send(
-                "Powiedz no, czy to coś w przodu twojej głowy to twarz czy dupa? ( ?b <item> <ile> )"
-            )
+            await ctx.send("Hmm, that not what I meant ( ?b <item> <amount> )")
             return 0
         database_main.create_user(user)
         await ctx.channel.purge(limit=1)
@@ -366,13 +358,13 @@ async def b(ctx, *message):
             await ctx.channel.purge(limit=1)
     else:
         await ctx.send(
-            "Niestety, ale nie masz możliwości zarządzania swoją szafką!\nMusisz najpierw posiadać rangę **AllowChest**, którą możesz uzyskać u osoby z rangą **AllowAdmin**."
+            "Unfortunately, you can't check your locker because you don't have one.\nYou must first have a rank **AllowChest**, which you can get from a person with a rank **AllowAdmin**."
         )
 
 
 @bot.command(
-    brief="Zarządzanie blacklistą. ?help black po wiecej info",
-    description="Wyświetlanie blacklisty/Zarządzanie blacklistą.\nNa przykład 'black'-Wyświetlanie blacklisty, lub 'black add Wiesław-Paleta Rozjebał-się-na-komendzie', albo 'black del <numer osoby>'.\n\nSPACJĘ POMIĘDZY SŁOWAMI ZASTĘPOWAĆ '-'!!!",
+    brief="Blacklist management. ?help black for more info",
+    description="Blacklist management.\nFor example 'black'-Shows blacklist, or 'black add Wiesław-Paleta Rozjebał-się-na-komendzie', or 'black del <personal ID>'.\n\nA SPACE BETWEEN THE WORDS REPLACE '-' !!!",
 )
 async def black(ctx, *message):
     role = discord.utils.get(ctx.guild.roles, name="*AllowChest")
@@ -393,7 +385,7 @@ async def black(ctx, *message):
             if message[0] == "add":
                 if len(message) < 3 or len(message) > 3:
                     await ctx.send(
-                        "Upewnij się że wszystkie argumenty zostały podane ( <kto> <powód> )\nPAMIĘTAJ O UŻYWANIU  ' - '  POMIĘDZY WYRAZAMI!!!"
+                        "Make sure all arguments are given ( <who> <reason> )\nREMEMBER TO USE  ' - '  BETWEEN WORDS!!!"
                     )
                     return 0
                 else:
@@ -407,7 +399,7 @@ async def black(ctx, *message):
             elif message[0] == "del":
                 if len(message) < 2 or len(message) > 2:
                     await ctx.send(
-                        "Upewnij się że wszystkie argumenty zostały podane ( <numer osoby> )"
+                        "Make sure all arguments are given ( <personal ID> )"
                     )
                 else:
                     logger.info(
@@ -424,7 +416,7 @@ async def black(ctx, *message):
                 await msg.edit(content=bufor)
             else:
                 await channel.send(
-                    "Wiadomość wygenerowana na rzecz ID. Skopiuj ID wiadomości i wklej w UPDATE_MESSAGE_BLACK .env"
+                    "Message generated for the ID. Copy the message ID and paste in UPDATE_MESSAGE_BLACK .env"
                 )
 
 
