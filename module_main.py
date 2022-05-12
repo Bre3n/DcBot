@@ -2,7 +2,10 @@ import json
 import os
 import sqlite3
 from asyncio import sleep
-from datetime import datetime
+from datetime import date, datetime
+import coloredlogs
+import logging
+from os import path
 
 import requests
 
@@ -15,6 +18,50 @@ update_channel_js = os.environ.get("UPDATE_CHANNEL")
 update_message_js = os.environ.get("UPDATE_MESSAGE")
 update_channel_black_js = os.environ.get("UPDATE_CHANNEL_BLACK")
 update_massage_black_js = os.environ.get("UPDATE_MESSAGE_BLACK")
+
+
+def logs():
+    now_date = str(date.today())
+    i = 1
+    if path.exists(f"logs") == False:
+        os.mkdir(f"logs")
+    if path.exists(f"logs/SORT_BY_MODIFICATION_TIME.txt") == False:
+        f = open(f"logs/SORT_BY_MODIFICATION_TIME.txt", "w")
+        f.write("")
+        f.close()
+    if path.exists(f"logs/{now_date}-9.log") == True:
+        os.remove(f"logs/{now_date}-9.log")
+    if path.exists(f"logs/{now_date}.log") == True:
+        while path.exists(f"logs/{now_date}-{i}.log") == True:
+            i = i + 1
+        os.rename(f"logs/{now_date}.log", f"logs/{now_date}-{i}.log")
+    else:
+        if path.exists(f"logs/latest.log") == True:
+            os.rename(
+                f"logs/latest.log",
+                f"logs/{now_date}.log",
+            )
+
+
+logs()
+
+logging.Formatter(fmt="%(asctime)s.%(msecs)03d", datefmt="%Y-%m-%d,%H:%M:%S")
+logging.basicConfig(
+    filename=f"logs/latest.log", format="%(asctime)s %(message)s", filemode="w"
+)
+logger = logging.getLogger(__name__)
+coloredlogs.install(level=logging.DEBUG, logger=logger)
+
+
+def log(type, string):
+    if type == "info":
+        logger.info(string)
+    elif type == "debug":
+        logger.debug(string)
+    elif type == "error":
+        logger.error(string)
+    elif type == "critical":
+        logger.critical(string)
 
 
 def czas():
@@ -136,12 +183,23 @@ def get_user(ctx, bot, user):
 
 def check_ids():
     if update_channel_js == "None":
-        print("Nie ustawiono poprawnie ID kanału do aktualizacji skrzynki!")
+        log(
+            "error",
+            "The channel ID for updating global locker has not been set correctly!",
+        )
     else:
         if update_message_js == "None":
-            print("Nie ustawiono poprawnie ID kanału do aktualizacji skrzynki!")
+            log(
+                "error",
+                "The message ID for updating global locker has not been set correctly!",
+            )
     if update_channel_black_js == "None":
-        print("Nie ustawiono poprawnie ID kanału do aktualizacji blacklisty!")
+        log(
+            "error", "The channel ID for updating blacklist has not been set correctly!"
+        )
     else:
         if update_massage_black_js == "None":
-            print("Nie ustawiono poprawnie ID wiadomości do aktualizacji blacklisty!")
+            log(
+                "error",
+                "The message ID for updating blacklist has not been set correctly!",
+            )

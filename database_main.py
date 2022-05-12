@@ -206,9 +206,9 @@ async def balance_item(ctx, bot, user, messagestr):
         user = user.replace("U", "")
         user = bot.get_user(int(user))
         if int(message[1]) >= 0:
-            mess = f"Added {message[0]} {message[1]} to {user} balance. Current balance is {data}"
+            mess = f"Added {message[1]} {message[0]} to {user} balance. Current balance is {data}"
         else:
-            mess = f"Deleted {message[0]} {message[1]} from {user} balance. Current balance is {data}"
+            mess = f"Deleted {message[1]} {message[0]} from {user} balance. Current balance is {data}"
     return mess
 
 
